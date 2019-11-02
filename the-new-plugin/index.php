@@ -11,117 +11,29 @@
 date_default_timezone_set('America/New_York');
 defined( 'ABSPATH' ) || exit;
 include( plugin_dir_path( __FILE__ ) . 'options.php');
-$tempPath = plugin_dir_path( __FILE__ );
-$tempurl = admin_url( 'admin-ajax.php' );
+$tempPath952 = plugin_dir_path( __FILE__ );
+$a = strpos($tempPath952,"/wp-content/");
+$tempPath952 = substr($tempPath952,$a);
 ?>
 
-<script
-  src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
-  integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8="
-  crossorigin="anonymous"></script>
-<script>
-	
-	jQuery(function($) {
-		jQuery('body').on('change', '.fileInputElement', function() {
-			console.log('file change noticed....');
-			var dataId = jQuery(this).data('id');
-			$this = jQuery(this);
-			file_obj = $this.prop('files');
-			form_data = new FormData();
-			for(i=0; i<file_obj.length; i++) {
-				var temp = jQuery('#linkArray'+dataId).val();
-            //lowercase the uploaded filename extension
-            var currentFilename = file_obj[i].name;
-            var currentFilenameLength = currentFilename.length;
-            var currentFilenameSansExt = currentFilename.substring(0, currentFilenameLength-3);
-            var currentFilenameExtension = currentFilename.substring(currentFilenameLength-3);
-            var newFilenameExtension = currentFilenameExtension.toLowerCase();
-            console.log('currentFilenameExtension...:'+currentFilenameExtension);
-            console.log('newFilenameExtension...:'+newFilenameExtension);
-            console.log('newFileName...'+currentFilenameSansExt+newFilenameExtension);
-            file_obj[i].name = currentFilenameSansExt+newFilenameExtension;            
-            console.log(file_obj[i]);
-            var linkArray = jQuery('#linkArray'+dataId).val(temp+'|'+file_obj[i].name);
-            form_data.append('file[]', file_obj[i]);
-        }
-        form_data.append('action', 'file_upload');
-        console.log('beginning ajax call for file upload...');
-        var tempUrl = "<?php echo $tempurl;?>";
-        jQuery.ajax({
-        	url: tempUrl,
-        	type: 'POST',
-        	contentType: false,
-        	processData: false,
-        	beforeSend: function(){
-        		console.log('displaying loading gif....');
-        		jQuery('#uploadFileSelect'+dataId).fadeOut(400);
-        		jQuery('#uploadLoadingGif'+dataId).fadeIn(400);
-        	},
-        	data: form_data,
-        	success: function (response) {
-                //$this.val('');
-                console.log('successfully upload..');
-                //jQuery('#uploadLoadingGif'+dataId).fadeOut(400);
-                //jQuery('#uploadFileSelect'+dataId).fadeIn(400);
-                //jQuery('#linkArray'+dataId).fadeIn(400);
-                var temp = jQuery('#linkArray'+dataId).val();
-                var newTemp = temp.substr(1);
-                jQuery('#linkArray'+dataId).val(newTemp);
-                jQuery('#linkArrayLabel'+dataId).html(newTemp);
-                //clear the imageContainer
-                jQuery('#imagePreview'+dataId).html('');
-                console.log('beginning element creation loop...');
-                jQuery.each( file_obj, function( key, value ) {
-                	var tempName = file_obj.name;
-                	var tempMonthNumber = jQuery('#monthNumber'+dataId).val();
-                	var tempYear= jQuery('#year'+dataId).val();
-                	var imagePath = "wp-content/uploads/"+tempYear+"/"+tempMonthNumber+"/";
-                    //update the image preview containter
-                    var createImageElement = "<img id='imagePreview"+dataId+"' class='imagePreviewElement' src='http://www.tripleddesigns.com/"+imagePath+file_obj[key].name+"' style='max-height:300px;width:150px;'>";
-                    console.log('creating image element...'+createImageElement);
-                    jQuery('#imagePreview'+dataId).append(createImageElement); 
-                });
-                jQuery('#save'+dataId).fadeIn(400,function(){
-                	console.log('save button clicked...');
-                	var dataId = jQuery(this).data('id');
-                	var tempKey = jQuery('#key'+dataId).val();
-                	var tempProductId = jQuery('#productId'+dataId).val();
-                	var tempName = jQuery('#name'+dataId).val();
-                	var tempToday = jQuery('#today'+dataId).val();
-                	var tempMonthNumber = jQuery('#monthNumber'+dataId).val();
-                	var tempYear= jQuery('#year'+dataId).val();
-                	var imagePath = "wp-content/uploads/"+tempYear+"/"+tempMonthNumber+"/";
-                	var nameArr = jQuery('#linkArray'+dataId).val();
-                	console.log('ajaxing the mail module...');
-                    var tempPath = "<?php echo $tempPath;?>";
-                	jQuery.ajax({
-                		url: '/notifyAdminForUploads.php',
-                		type: 'POST',
-                		beforeSend: function(){
-                			console.log('displaying loading gif....');
-                            console.log(nameArr);
-                			jQuery('#save'+dataId).css('color','green');
-                		},
-                		data: {tempKey:tempKey,tempProductId:tempProductId,tempName:tempName,tempToday:tempToday,tempMonthNumber:tempMonthNumber,tempYear:tempYear,imagePath:imagePath,nameArray:nameArr},
-                		success: function (thedataresponse) {
-                			console.log(thedataresponse);
-                			jQuery('#save'+dataId).fadeOut(400);
-                			console.log('successfully mailed..');
-                			jQuery('#uploadLoadingGif'+dataId).fadeOut(400);
-                			jQuery('#uploadFileSelect'+dataId).fadeIn(400);
-                			jQuery('#uploadButton'+dataId).fadeOut(400);
-                		}
-                	});
-                });
-
-            }
-        });
-    });
-});
-</script>
 <?php
 
 ////////////////////begin functions for upload callback////////////////////
+function aw_scripts() {
+    // Register the script
+    global $tempPath952;
+    wp_register_script( 'aw-custom', $tempPath952.'js/customUpload.js', array('jquery'), '1.1', true );
+ 
+    // Localize the script with new data
+    $script_data_array = array(
+        'ajaxurl' => admin_url( 'admin-ajax.php' ),
+        'pluginAbsolutePath'=>$tempPath952
+    );
+    wp_localize_script( 'aw-custom', 'aw', $script_data_array );
+ 
+    // Enqueued script with localized data.
+    wp_enqueue_script( 'aw-custom' );
+}
 
 function file_upload_callback() {
     $arr_img_ext = array('image/png', 'image/jpeg', 'image/jpg', 'image/gif');
@@ -134,12 +46,17 @@ function file_upload_callback() {
         }
     }
     echo "File(s) uploaded successfully";
+
     wp_die();
 }
  
+add_action( 'wp_enqueue_scripts', 'aw_scripts' );
 add_action( 'wp_ajax_file_upload', 'file_upload_callback' );
 add_action( 'wp_ajax_nopriv_file_upload', 'file_upload_callback' );
 ////////////////////end upload callback function section//////////////////////////////////////
+
+
+
 
 $counter = 0;
 

@@ -23,4 +23,5 @@ $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
 $headers .= 'From: <contact@tripleddesigns.com>' . "\r\n";
 	 
 	mail( $to, $subject, $body, $headers );
+
 ?>
